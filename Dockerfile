@@ -51,12 +51,14 @@ RUN --mount=type=secret,id=mm_account_id \
     --mount=type=secret,id=mm_license_key \
     apk add --no-cache curl && \
     mkdir -p /geoip && \
+    MM_ACCOUNT=$(cat /run/secrets/mm_account_id) && \
+    MM_KEY=$(cat /run/secrets/mm_license_key) && \
+    echo "Account ID length: ${#MM_ACCOUNT}" && \
     for edition in GeoLite2-Country GeoLite2-City; do \
-        curl -fsSL \
-            -u "$(cat /run/secrets/mm_account_id):$(cat /run/secrets/mm_license_key)" \
+        curl -sS --write-out "\nHTTP_STATUS:%{http_code}\n" \
+            -u "${MM_ACCOUNT}:${MM_KEY}" \
             "https://download.maxmind.com/geoip/databases/${edition}/download?suffix=tar.gz" \
-            -o "/tmp/${edition}.tar.gz" && \
-        tar -xzf "/tmp/${edition}.tar.gz" --wildcards "*.mmdb" --strip-components=1 -C /geoip; \
+            -o "/tmp/${edition}.tar.gz"; \
     done
 
 FROM alpine:3.19
