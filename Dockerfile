@@ -50,7 +50,7 @@ ARG MAXMIND_LICENSE_KEY
 RUN apk add --no-cache wget && \
     mkdir -p /geoip && \
     for edition in GeoLite2-Country GeoLite2-City; do \
-        wget -qO "/tmp/${edition}.tar.gz" \
+        wget -v -O "/tmp/${edition}.tar.gz" \
             "https://download.maxmind.com/geoip/databases/${edition}/download?suffix=tar.gz" \
             --user="${MAXMIND_ACCOUNT_ID}" \
             --password="${MAXMIND_LICENSE_KEY}" && \
