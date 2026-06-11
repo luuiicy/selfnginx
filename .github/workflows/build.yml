@@ -28,15 +28,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download GeoIP2 databases
-        run: |
-          mkdir -p geoip
-          for edition in GeoLite2-Country GeoLite2-City; do
-            curl -fsSL \
-              "https://download.maxmind.com/app/geoip_download?edition_id=${edition}&license_key=${{ secrets.MAXMIND_LICENSE_KEY }}&suffix=tar.gz" \
-              -o "${edition}.tar.gz"
-            tar -xzf "${edition}.tar.gz" --wildcards "*.mmdb" --strip-components=1 -C geoip
-          done
+      - name: Update MaxMind GeoIP2 databases
+        uses: maxmind/geoipupdate-action@v1
+        with:
+          account-id: ${{ secrets.MAXMIND_ACCOUNT_ID }}
+          license-key: ${{ secrets.MAXMIND_LICENSE_KEY }}
+          edition-ids: 'GeoLite2-City GeoLite2-Country'
+          db-dir: geoip
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
