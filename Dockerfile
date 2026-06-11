@@ -41,6 +41,20 @@ RUN cd nginx-${NGINX_VERSION} && \
         --add-module=../ngx_http_geoip2_module \
     && make -j$(nproc) && make install
 
+# GeoIP2 下载阶段
+FROM alpine:3.19 AS geoip
+
+ARG MAXMIND_ACCOUNT_ID
+ARG MAXMIND_LICENSE_KEY
+
+RUN apk add --no-cache wget && \
+    mkdir -p /geoip && \
+    for edition in GeoLite2-Country GeoLite2-City; do \
+        wget -qO "/tmp/${edition}.tar.gz" \
+            "https://download.maxmind.com/app/geoip_download?edition_id=${edition}&account_id=${MAXMIND_ACCOUNT_ID}&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz" && \
+        tar -xzf "/tmp/${edition}.tar.gz" --wildcards "*.mmdb" --strip-components=1 -C /geoip; \
+    done
+
 FROM alpine:3.19
 
 RUN apk add --no-cache pcre2 openssl tzdata libmaxminddb && \
@@ -51,8 +65,7 @@ RUN apk add --no-cache pcre2 openssl tzdata libmaxminddb && \
 
 COPY --from=builder /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=builder /etc/nginx /etc/nginx
-# GeoIP2 数据库（由 CI 下载后注入，本地构建时可省略）
-COPY --chown=nginx:nginx geoip/ /etc/nginx/geoip/
+COPY --from=geoip --chown=nginx:nginx /geoip/ /etc/nginx/geoip/
 
 EXPOSE 80 443
 
